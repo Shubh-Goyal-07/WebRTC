@@ -1,33 +1,26 @@
-// MeetUI.js
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import WebRTCHandler from './api/WebRTCHandler'; // Import the WebRTCHandler
+import WebRTCHandler from './api/WebRTCHandler';
 
 const MeetUI = () => {
     const { meetId, userName } = useParams();
     const localVideo = useRef(null);
     const remoteVideo = useRef(null);
-    const [socket, setSocket] = useState(null);
-
-    const socketServerURL = 'http://172.31.12.101:8181'; // Replace with your server URL
+    const socketRef = useRef();
 
     useEffect(() => {
-        const newSocket = io(socketServerURL);
-        setSocket(newSocket);
+        // Initialize socket connection
+        socketRef.current = io('http://172.31.12.101:8181'); // Adjust the URL as needed
 
-        newSocket.emit('joinMeeting', { meetingCode: meetId, userName });
+        // Create an instance of WebRTCHandler
+        const webrtcHandler = new WebRTCHandler(meetId, userName, socketRef.current, localVideo, remoteVideo);
 
+        // Cleanup function to disconnect the socket when the component unmounts
         return () => {
-            newSocket.disconnect();
+            socketRef.current.disconnect();
         };
     }, [meetId, userName]);
-
-    useEffect(() => {
-        if (socket) {
-            new WebRTCHandler(meetId, userName, socket, localVideo, remoteVideo);
-        }
-    }, [socket, meetId, userName]);
 
     return (
         <div>

@@ -6,7 +6,16 @@ class WebRTCHandler {
         this.socket = socket;
         this.localVideo = localVideo;
         this.remoteVideo = remoteVideo;
-        this.peerConnection = new RTCPeerConnection();
+
+        // Create a peer connection with STUN server configuration
+        const configuration = {
+            iceServers: [
+                {
+                    urls: 'stun:stun.l.google.com:19302' // Google STUN server
+                }
+            ]
+        };
+        this.peerConnection = new RTCPeerConnection(configuration);
         this.init();
     }
 
