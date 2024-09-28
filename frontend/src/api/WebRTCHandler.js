@@ -1,96 +1,77 @@
+// WebRTCHandler.js
 class WebRTCHandler {
-    constructor(socket, localVideo, remoteVideo) {
+    constructor(meetId, userName, socket, localVideo, remoteVideo) {
+        this.meetId = meetId;
+        this.userName = userName;
         this.socket = socket;
         this.localVideo = localVideo;
         this.remoteVideo = remoteVideo;
-        this.localStream = null;
-        this.peerConnections = {}; // Store peer connections based on offerer's username
-
-        this.bindSocketEvents();
+        this.peerConnection = new RTCPeerConnection();
+        this.init();
     }
 
-    bindSocketEvents() {
+    init() {
+        this.setupSocketListeners();
+        this.getUserMedia();
+    }
+
+    setupSocketListeners() {
         this.socket.on('availableOffers', (offers) => {
             offers.forEach(offer => {
-                this.handleIncomingOffer(offer);
+                this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+                    .then(() => this.peerConnection.createAnswer())
+                    .then(answer => this.peerConnection.setLocalDescription(answer))
+                    .then(() => {
+                        this.socket.emit('sendAnswer', {
+                            answer: this.peerConnection.localDescription,
+                            meetingCode: this.meetId,
+                            userName: this.userName
+                        });
+                    })
+                    .catch(err => console.error('Error handling offer:', err));
             });
         });
 
-        this.socket.on('answerResponse', (answerObj) => {
-            this.handleAnswerResponse(answerObj);
+        this.socket.on('answerResponse', (answer) => {
+            this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
+                .catch(err => console.error('Error setting remote description:', err));
         });
-    }
 
-    async getMediaStream() {
-        try {
-            this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            this.localVideo.srcObject = this.localStream;
-        } catch (error) {
-            console.error('Error accessing media devices.', error);
-        }
-    }
-
-    async createOffer(userName, meetingCode) {
-        const peerConnection = new RTCPeerConnection();
-        this.localStream.getTracks().forEach(track => peerConnection.addTrack(track, this.localStream));
-
-        peerConnection.onicecandidate = (event) => {
+        this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                this.socket.emit('newOffer', {
-                    iceCandidates: [event.candidate],
-                    userName,
-                    meetingCode
+                this.socket.emit('newIceCandidate', {
+                    iceCandidate: event.candidate,
+                    meetingCode: this.meetId,
+                    userName: this.userName
                 });
             }
         };
 
-        peerConnection.ontrack = (event) => {
-            this.remoteVideo.srcObject = event.streams[0];
+        this.peerConnection.ontrack = (event) => {
+            this.remoteVideo.current.srcObject = event.streams[0];
         };
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        // Store peer connection
-        this.peerConnections[userName] = peerConnection;
     }
 
-    async handleIncomingOffer(offerObj) {
-        const peerConnection = new RTCPeerConnection();
-        this.localStream.getTracks().forEach(track => peerConnection.addTrack(track, this.localStream));
-
-        peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-                this.socket.emit('newAnswer', [{
-                    meetingCode: offerObj.meetingCode,
-                    offererUserName: offerObj.offererUserName,
-                    answererUserName: offerObj.answererUserName,
-                    answererIceCandidates: [event.candidate]
-                }], (offerIceCandidates) => {
-                    offerIceCandidates.forEach(candidate => peerConnection.addIceCandidate(new RTCIceCandidate(candidate)));
-                });
-            }
-        };
-
-        peerConnection.ontrack = (event) => {
-            this.remoteVideo.srcObject = event.streams[0];
-        };
-
-        const remoteDesc = new RTCSessionDescription(offerObj.offer);
-        await peerConnection.setRemoteDescription(remoteDesc);
-
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        // Store peer connection
-        this.peerConnections[offerObj.offererUserName] = peerConnection;
+    getUserMedia() {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then((stream) => {
+                this.localVideo.current.srcObject = stream;
+                stream.getTracks().forEach(track => this.peerConnection.addTrack(track, stream));
+                this.sendOffer();
+            })
+            .catch(err => console.error('Error accessing media devices.', err));
     }
 
-    handleAnswerResponse(answerObj) {
-        const peerConnection = this.peerConnections[answerObj.offererUserName];
-        if (peerConnection) {
-            peerConnection.addIceCandidate(new RTCIceCandidate(answerObj.answererIceCandidates));
-        }
+    sendOffer() {
+        this.peerConnection.createOffer().then(offer => {
+            return this.peerConnection.setLocalDescription(offer);
+        }).then(() => {
+            this.socket.emit('newOffer', {
+                offer: this.peerConnection.localDescription,
+                meetingCode: this.meetId,
+                userName: this.userName
+            });
+        });
     }
 }
 
