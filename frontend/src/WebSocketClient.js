@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import socket from './socket'; // Import the socket client
+import socket from './api/socket'; // Import the socket client
 
 export default function WebSocketClient() {
     const [message, setMessage] = useState('');

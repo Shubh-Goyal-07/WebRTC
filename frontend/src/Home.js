@@ -6,6 +6,7 @@ const Home = () => {
     const navigate = useNavigate();
     const [meetId, setMeetId] = useState(null);
     const [joinCode, setJoinCode] = useState('');
+    const [userName, setUserName] = useState('');
     const [error, setError] = useState(null);
 
     const createMeet = () => {
@@ -23,16 +24,18 @@ const Home = () => {
         e.preventDefault();
         if (joinCode.trim() === '') {
             setError('Please enter a valid meet code');
+        } else if (userName.trim() === '') {
+            setError('Please enter your name');
         } else {
-            navigate(`/meet/${joinCode}`);
+            navigate(`/meet/${joinCode}/${userName}`);
         }
     };
 
     useEffect(() => {
-        if (meetId) {
-            navigate(`/meet/${meetId}`);
+        if (meetId && userName.trim()) {
+            navigate(`/meet/${meetId}/${userName}`);
         }
-    }, [meetId, navigate]);
+    }, [meetId, userName, navigate]);
 
     const containerStyle = {
         minHeight: '100vh',
@@ -56,10 +59,23 @@ const Home = () => {
     return (
         <div style={containerStyle}>
             <div style={cardStyle}>
-                <h1 style={{fontSize: '1.875rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '2rem'}}>Instant Meet</h1>
-                
-                <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
-                    <button 
+                <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '2rem' }}>Instant Meet</h1>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <input
+                        type="text"
+                        placeholder="Enter your name"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        style={{
+                            width: '100%',
+                            padding: '0.5rem 1rem',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '0.375rem',
+                        }}
+                    />
+
+                    <button
                         onClick={createMeet}
                         style={{
                             width: '100%',
@@ -76,16 +92,16 @@ const Home = () => {
                         Create instant meet
                     </button>
 
-                    <div style={{display: 'flex', alignItems: 'center'}}>
-                        <div style={{flexGrow: 1, borderTop: '1px solid #d1d5db'}}></div>
-                        <span style={{flexShrink: 0, margin: '0 1rem', color: '#6b7280'}}>or</span>
-                        <div style={{flexGrow: 1, borderTop: '1px solid #d1d5db'}}></div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ flexGrow: 1, borderTop: '1px solid #d1d5db' }}></div>
+                        <span style={{ flexShrink: 0, margin: '0 1rem', color: '#6b7280' }}>or</span>
+                        <div style={{ flexGrow: 1, borderTop: '1px solid #d1d5db' }}></div>
                     </div>
 
-                    <form onSubmit={joinMeet} style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                    <form onSubmit={joinMeet} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <input
                             type="text"
-                            placeholder="Enter a code or link"
+                            placeholder="Enter a meet code"
                             value={joinCode}
                             onChange={(e) => setJoinCode(e.target.value)}
                             style={{
@@ -95,7 +111,7 @@ const Home = () => {
                                 borderRadius: '0.375rem',
                             }}
                         />
-                        <button 
+                        <button
                             type="submit"
                             style={{
                                 width: '100%',
@@ -114,7 +130,7 @@ const Home = () => {
                     </form>
 
                     {error && (
-                        <div style={{backgroundColor: '#fee2e2', borderRadius: '0.375rem', padding: '1rem', color: '#991b1b'}}>
+                        <div style={{ backgroundColor: '#fee2e2', borderRadius: '0.375rem', padding: '1rem', color: '#991b1b' }}>
                             {error}
                         </div>
                     )}

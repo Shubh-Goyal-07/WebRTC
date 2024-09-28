@@ -126,8 +126,8 @@ io.on('connection', (socket) => {
     // });
 
     // Client joining a meeting
-    socket.on('joinMeeting', async ({ meetingCode }) => {
-        const meeting = await Meeting.findOne({ meetingCode });
+    socket.on('joinMeeting', async ({ meetingCode, userName="shubh" }) => {
+        const meeting = await Meeting.findOne({ meetingCode, userName });
         if (!meeting) {
             socket.emit('error', 'Meeting not found');
             return;

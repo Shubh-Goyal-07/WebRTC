@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const baseURL = 'http://172.31.12.101:8181'; // Replace with your actual base URL
+// read config.json
+const config = require('./config.json');
+// Set the base URL for the API
+const baseURL = config.baseURL;
 
 export async function getMeetId() {
     try {
