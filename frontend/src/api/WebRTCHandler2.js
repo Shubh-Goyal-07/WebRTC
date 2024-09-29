@@ -32,3 +32,5 @@ class WebRTCHandler {
         });
     }
 }
+
+export default WebRTCHandler;

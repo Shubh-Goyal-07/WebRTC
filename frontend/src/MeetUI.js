@@ -1,11 +1,11 @@
 // src/MeetUI.js
 import React, { useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-import WebRTCHandler from './api/WebRTCHandler';
+import WebRTCHandler from './api/WebRTCHandler2';
 import { useParams } from 'react-router-dom';
 
 const MeetUI = () => {
-    const socketRef = useRef(null);
+    // const socketRef = useRef(null);
     const { meetingCode, userName } = useParams();
 
     useEffect(() => {
@@ -15,7 +15,7 @@ const MeetUI = () => {
         });
 
         return () => {
-            socketRef.current.disconnect();
+            // socketRef.current.disconnect();
         };
     }, [meetingCode, userName]);
 
