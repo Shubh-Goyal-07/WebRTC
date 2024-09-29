@@ -1,7 +1,7 @@
 // src/MeetUI.js
 import React, { useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-import WebRTCHandler from './api/WebRTCHandler2';
+import WebRTCHandler from './api/WebRTCHandler3';
 import { useParams } from 'react-router-dom';
 
 const MeetUI = () => {
