@@ -58,6 +58,8 @@ class WebRTCHandler {
         // Handle ICE candidate generation and send them to the signaling server
         pc.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log(`Sending ICE candidate to ${userName}`);
+                
                 this.socket.emit('sendIceCandidateToSignalingServer', {
                     iceCandidate: event.candidate,
                     userName,
@@ -154,6 +156,16 @@ class WebRTCHandler {
             const pc = this.peerConnections[answererUserName];
             if (pc) {
                 await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            }
+        });
+
+
+        // Handle receiving ICE candidates from another client
+        this.socket.on('receiveIceCandidate', (iceCandidate, userName) => {
+            const pc = this.peerConnections[userName];
+            if (pc) {
+                console.log(`Received ICE candidate from ${userName}`);
+                pc.addIceCandidate(new RTCIceCandidate(iceCandidate));
             }
         });
     }
