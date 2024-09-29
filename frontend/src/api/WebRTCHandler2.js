@@ -19,7 +19,7 @@ class WebRTCHandler {
     }
 
     async joinMeeting() {
-        this.socket.emit('joinMeeting', { meetID: this.meetID, userName: this.userName });
+        this.socket.emit('joinMeeting', { meetingCode: this.meetID, userName: this.userName });
 
         console.log('Joining meeting:', this.meetID);
     

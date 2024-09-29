@@ -6,10 +6,11 @@ import { useParams } from 'react-router-dom';
 
 const MeetUI = () => {
     // const socketRef = useRef(null);
-    const { meetingCode, userName } = useParams();
-
+    const { meetId, userName } = useParams();
+    
     useEffect(() => {
-        const webrtcHandler = new WebRTCHandler(meetingCode, userName);
+        // console.log('MeetUI:', meetId, userName);
+        const webrtcHandler = new WebRTCHandler(meetId, userName);
         webrtcHandler.initializeMedia().then(() => {
             console.log('Media initialized');
             webrtcHandler.joinMeeting();
@@ -18,11 +19,11 @@ const MeetUI = () => {
         return () => {
             // socketRef.current.disconnect();
         };
-    }, [meetingCode, userName]);
+    }, [meetId, userName]);
 
     return (
         <div>
-            <p>Meeting Code: {meetingCode}</p>
+            <p>Meeting Code: {meetId}</p>
             <video id="localVideo" autoPlay muted></video>
             <video id="remoteVideo" autoPlay></video>
         </div>
