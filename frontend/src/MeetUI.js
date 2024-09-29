@@ -12,6 +12,7 @@ const MeetUI = () => {
         const webrtcHandler = new WebRTCHandler(meetingCode, userName);
         webrtcHandler.initializeMedia().then(() => {
             console.log('Media initialized');
+            webrtcHandler.joinMeeting();
         });
 
         return () => {
