@@ -36,10 +36,10 @@ class WebRTCHandler {
     }
 
     async createPeerConnection(userName, didIOffer) {
-            const pc = new RTCPeerConnection();
-            this.peerConnections[userName] = pc;
-            return pc;
-        }
+        const pc = new RTCPeerConnection();
+        this.peerConnections[userName] = pc;
+        return pc;
+    }
 
 
     async sendOfferToServer(peerUserName) {
@@ -63,7 +63,7 @@ class WebRTCHandler {
     }
 
     async handleOffer(offer, offererUserName) {
-        const pc = this.createPeerConnection(offererUserName, false);
+        const pc = await this.createPeerConnection(offererUserName, false);
         await pc.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -107,6 +107,8 @@ class WebRTCHandler {
 
             const pc = this.peerConnections[answererUserName];
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+            // const pc2 = RTCPeerConnection();
         });
     }
 }
