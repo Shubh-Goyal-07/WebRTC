@@ -19,7 +19,7 @@ const MeetUI = () => {
         return () => {
             // socketRef.current.disconnect();
         };
-    }, [meetId, userName]);
+    }, []);
 
     return (
         <div>
