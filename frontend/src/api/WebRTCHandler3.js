@@ -26,7 +26,7 @@ class WebRTCHandler {
         console.log('Joining meeting:', this.meetID);
 
         // Listen for existing clients when joining
-        this.socket.on('existingClients', (clients) => {
+        this.socket.once('existingClients', (clients) => {
             console.log('Existing clients:', clients);
             this.clients = clients;
 
@@ -37,7 +37,7 @@ class WebRTCHandler {
         });
 
         // Handle errors (e.g., meeting not found)
-        this.socket.on('error', (error) => {
+        this.socket.once('error', (error) => {
             console.log('Error:', error);
             window.location.href = '/';  // Redirect back to home page on error
         });
@@ -134,19 +134,19 @@ class WebRTCHandler {
     // Set up socket listeners for events (new clients, offers, answers)
     setupSocketListeners() {
         // Handle when a new client joins the meeting
-        this.socket.on('newClientJoined', ({ userName }) => {
+        this.socket.once('newClientJoined', ({ userName }) => {
             console.log(`${userName} joined the meeting.`);
             this.handleNewClientJoined(userName);
         });
 
         // Handle receiving an offer from another client
-        this.socket.on('receiveOffer', async ({ offer, offererUserName }) => {
+        this.socket.once('receiveOffer', async ({ offer, offererUserName }) => {
             console.log(`Received offer from ${offererUserName} at ${new Date().toISOString()}`);
             this.handleOffer(offer, offererUserName);
         });
 
         // Handle receiving an answer from another client
-        this.socket.on('answerResponse', async ({ answer, answererUserName }) => {
+        this.socket.once('answerResponse', async ({ answer, answererUserName }) => {
             console.log('Received answer from:', answererUserName);
 
             const pc = this.peerConnections[answererUserName];
