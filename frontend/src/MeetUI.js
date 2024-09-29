@@ -8,24 +8,21 @@ const MeetUI = () => {
     // const socketRef = useRef(null);
     const { meetId, userName } = useParams();
     
-    // useEffect(() => {
-    //     // console.log('MeetUI:', meetId, userName);
-    //     const webrtcHandler = new WebRTCHandler(meetId, userName);
-    //     webrtcHandler.initializeMedia().then(() => {
-    //         console.log('Media initialized');
-    //         webrtcHandler.joinMeeting();
-    //     });
+    useEffect(() => {
+        const webrtcHandler = new WebRTCHandler(meetId, userName);
+        
+        const initialize = async () => {
+            await webrtcHandler.initializeMedia();
+            console.log('Media initialized');
+            webrtcHandler.joinMeeting();
+        };
 
-    //     return () => {
-    //         // socketRef.current.disconnect();
-    //     };
-    // });
+        initialize();
 
-    const webrtcHandler = new WebRTCHandler(meetId, userName);
-    webrtcHandler.initializeMedia().then(() => {
-        console.log('Media initialized');
-        webrtcHandler.joinMeeting();
-    });
+        return () => {
+            // Optionally handle cleanup here (e.g., disconnect socket or cleanup resources)
+        };
+    }, []); // Run effect when meetId or userName changes
 
     return (
         <div>

@@ -11,6 +11,8 @@ class WebRTCHandler {
 
         // Set up socket listeners (only once)
         this.setupSocketListeners();
+
+        console.log('WebRTCHandler initialized');
     }
 
     // Initialize media streams (video & audio)
