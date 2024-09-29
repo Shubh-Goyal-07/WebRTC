@@ -1,85 +1,85 @@
-// WebRTCHandler.js
 class WebRTCHandler {
-    constructor(meetId, userName, socket, localVideo, remoteVideo) {
-        this.meetId = meetId;
-        this.userName = userName;
+    constructor(socket, meetingCode, userName) {
         this.socket = socket;
-        this.localVideo = localVideo;
-        this.remoteVideo = remoteVideo;
-
-        // Create a peer connection with STUN server configuration
-        const configuration = {
-            iceServers: [
-                {
-                    urls: 'stun:stun.l.google.com:19302' // Google STUN server
-                }
-            ]
-        };
-        this.peerConnection = new RTCPeerConnection(configuration);
-        this.init();
-    }
-
-    init() {
+        this.meetingCode = meetingCode;
+        this.userName = userName;
+        this.peerConnections = {}; // Store all peer connections
+        this.localStream = null;
         this.setupSocketListeners();
-        this.getUserMedia();
     }
 
-    setupSocketListeners() {
-        this.socket.on('availableOffers', (offers) => {
-            offers.forEach(offer => {
-                this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
-                    .then(() => this.peerConnection.createAnswer())
-                    .then(answer => this.peerConnection.setLocalDescription(answer))
-                    .then(() => {
-                        this.socket.emit('sendAnswer', {
-                            answer: this.peerConnection.localDescription,
-                            meetingCode: this.meetId,
-                            userName: this.userName
-                        });
-                    })
-                    .catch(err => console.error('Error handling offer:', err));
-            });
+    async initializeMedia() {
+        this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        // Assuming you have a local video element with id 'localVideo'
+        const localVideo = document.getElementById('localVideo');
+        localVideo.srcObject = this.localStream;
+    }
+
+    createPeerConnection(userName, isOfferer) {
+        const peerConnection = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' } // Example STUN server
+            ]
         });
 
-        this.socket.on('answerResponse', (answer) => {
-            this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
-                .catch(err => console.error('Error setting remote description:', err));
+        this.peerConnections[userName] = peerConnection; // Store the connection
+
+        // Add tracks from local stream to peer connection
+        this.localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, this.localStream);
         });
 
-        this.peerConnection.onicecandidate = (event) => {
+        // ICE candidate handling
+        peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                this.socket.emit('newIceCandidate', {
+                this.socket.emit('sendIceCandidateToSignalingServer', {
+                    iceUserName: userName,
                     iceCandidate: event.candidate,
-                    meetingCode: this.meetId,
-                    userName: this.userName
+                    meetingCode: this.meetingCode,
+                    didIOffer: isOfferer
                 });
             }
         };
 
-        this.peerConnection.ontrack = (event) => {
-            this.remoteVideo.current.srcObject = event.streams[0];
+        // Handle incoming tracks
+        peerConnection.ontrack = (event) => {
+            const remoteVideo = document.getElementById('remoteVideo'); // Adjust as necessary
+            remoteVideo.srcObject = event.streams[0];
         };
+
+        return peerConnection;
     }
 
-    getUserMedia() {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then((stream) => {
-                this.localVideo.current.srcObject = stream;
-                stream.getTracks().forEach(track => this.peerConnection.addTrack(track, stream));
-                this.sendOffer();
-            })
-            .catch(err => console.error('Error accessing media devices.', err));
-    }
-
-    sendOffer() {
-        this.peerConnection.createOffer().then(offer => {
-            return this.peerConnection.setLocalDescription(offer);
-        }).then(() => {
-            this.socket.emit('newOffer', {
-                offer: this.peerConnection.localDescription,
-                meetingCode: this.meetId,
-                userName: this.userName
+    setupSocketListeners() {
+        // Listen for available offers when joining a meeting
+        this.socket.on('availableOffers', (offers) => {
+            offers.forEach((offer) => {
+                this.createPeerConnection(offer.offererUserName, false);
+                this.peerConnections[offer.offererUserName].setRemoteDescription(new RTCSessionDescription(offer.offer))
+                    .then(() => {
+                        return this.peerConnections[offer.offererUserName].createAnswer();
+                    })
+                    .then(answer => {
+                        return this.peerConnections[offer.offererUserName].setLocalDescription(answer);
+                    })
+                    .then(() => {
+                        this.socket.emit('newAnswer', {
+                            answer: this.peerConnections[offer.offererUserName].localDescription,
+                            offererUserName: offer.offererUserName,
+                            meetingCode: this.meetingCode
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error handling offer:', error);
+                    });
             });
+        });
+
+        this.socket.on('receivedIceCandidateFromServer', (iceCandidate) => {
+            const peerConnection = this.peerConnections[iceCandidate.userName];
+            if (peerConnection) {
+                peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate));
+            }
         });
     }
 }
