@@ -33,11 +33,30 @@ class WebRTCHandler {
                 this.sendOfferToServer(client);
             });
         });
+
+
+        this.socket.on('error', (error) => {
+            console.log('Error:', error);
+            
+            // reload to the home page
+            window.location.href = '/';
+        });
     }
 
     async createPeerConnection(userName, didIOffer) {
         const pc = new RTCPeerConnection();
         this.peerConnections[userName] = pc;
+
+        // Add ice candidate to the peer connection
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                this.socket.emit('sendIceCandidateToSignalingServer', {
+                    iceCandidate: event.candidate,
+                    userName,
+                    meetingCode: this.meetID
+                });
+            }
+        };
         return pc;
     }
 
