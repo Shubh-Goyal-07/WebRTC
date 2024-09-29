@@ -1,5 +1,20 @@
 import io from 'socket.io-client';
 
+
+const iceServers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun.l.google.com:5349" },
+    { urls: "stun:stun1.l.google.com:3478" },
+    { urls: "stun:stun1.l.google.com:5349" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:5349" },
+    { urls: "stun:stun3.l.google.com:3478" },
+    { urls: "stun:stun3.l.google.com:5349" },
+    { urls: "stun:stun4.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:5349" }
+];
+
+
 class WebRTCHandler {
     constructor(meetID, userName) {
         this.socket = io.connect('http://172.31.12.101:8181');  // Adjust server URL as necessary
@@ -52,14 +67,17 @@ class WebRTCHandler {
             return this.peerConnections[userName];
         }
 
-        const pc = new RTCPeerConnection();
-        this.peerConnections[userName] = pc;
+        const pc = new RTCPeerConnection({ iceServers });
+        this.peerConnections[userName] = pc;    
 
         // Handle ICE candidate generation and send them to the signaling server
+        console.log(`Creating PeerConnection with ${userName}`);
         pc.onicecandidate = (event) => {
+            console.log(`ICE candidate generated for ${userName}`);
+
             if (event.candidate) {
                 console.log(`Sending ICE candidate to ${userName}`);
-                
+
                 this.socket.emit('sendIceCandidateToSignalingServer', {
                     iceCandidate: event.candidate,
                     userName,
