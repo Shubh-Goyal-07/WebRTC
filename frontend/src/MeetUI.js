@@ -8,18 +8,24 @@ const MeetUI = () => {
     // const socketRef = useRef(null);
     const { meetId, userName } = useParams();
     
-    useEffect(() => {
-        // console.log('MeetUI:', meetId, userName);
-        const webrtcHandler = new WebRTCHandler(meetId, userName);
-        webrtcHandler.initializeMedia().then(() => {
-            console.log('Media initialized');
-            webrtcHandler.joinMeeting();
-        });
+    // useEffect(() => {
+    //     // console.log('MeetUI:', meetId, userName);
+    //     const webrtcHandler = new WebRTCHandler(meetId, userName);
+    //     webrtcHandler.initializeMedia().then(() => {
+    //         console.log('Media initialized');
+    //         webrtcHandler.joinMeeting();
+    //     });
 
-        return () => {
-            // socketRef.current.disconnect();
-        };
-    }, []);
+    //     return () => {
+    //         // socketRef.current.disconnect();
+    //     };
+    // });
+
+    const webrtcHandler = new WebRTCHandler(meetId, userName);
+    webrtcHandler.initializeMedia().then(() => {
+        console.log('Media initialized');
+        webrtcHandler.joinMeeting();
+    });
 
     return (
         <div>
