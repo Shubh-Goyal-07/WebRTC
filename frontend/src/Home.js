@@ -10,7 +10,7 @@ const Home = () => {
     const [error, setError] = useState(null);
 
     const createMeet = () => {
-        getMeetId()
+        getMeetId(userName)
             .then((data) => {
                 setMeetId(data.meetingCode);
             })
