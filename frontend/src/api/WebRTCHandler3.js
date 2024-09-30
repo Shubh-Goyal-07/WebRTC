@@ -34,39 +34,39 @@ class WebRTCHandler {
         // Set up socket listeners (only once)
         this.setupSocketListeners();
 
-        console.log('WebRTCHandler initialized');
+        // console.log('WebRTCHandler initialized');
     }
 
     // Initialize media streams (video & audio)
     async initializeMedia() {
         this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = this.localStream;
-        console.log('Media initialized');
-        console.log('Local Stream:', this.localStream);
+        // console.log('Media initialized');
+        // console.log('Local Stream:', this.localStream);
     }
 
     // Toggle audio (mute/unmute)
     toggleAudio() {
         this.audioEnabled = !this.audioEnabled;
         this.localStream.getAudioTracks().forEach(track => track.enabled = this.audioEnabled);
-        console.log(`Audio ${this.audioEnabled ? 'enabled' : 'disabled'}`);
+        // console.log(`Audio ${this.audioEnabled ? 'enabled' : 'disabled'}`);
     }
 
     // Toggle video (on/off)
     toggleVideo() {
         this.videoEnabled = !this.videoEnabled;
         this.localStream.getVideoTracks().forEach(track => track.enabled = this.videoEnabled);
-        console.log(`Video ${this.videoEnabled ? 'enabled' : 'disabled'}`);
+        // console.log(`Video ${this.videoEnabled ? 'enabled' : 'disabled'}`);
     }
 
     // Join a meeting by emitting an event to the server
     async joinMeeting() {
         this.socket.emit('joinMeeting', { meetingCode: this.meetID, userName: this.userName });
-        console.log('Joining meeting:', this.meetID);
+        // console.log('Joining meeting:', this.meetID);
 
         // Listen for existing clients when joining
         this.socket.on('existingClients', (clients) => {
-            console.log('Existing clients:', clients);
+            // console.log('Existing clients:', clients);
             this.clients = clients;
 
             clients.forEach(client => {
@@ -77,7 +77,7 @@ class WebRTCHandler {
 
         // Handle errors (e.g., meeting not found)
         this.socket.on('error', (error) => {
-            console.log('Error:', error);
+            // console.log('Error:', error);
             window.location.href = '/';  // Redirect back to home page on error
         });
     }
@@ -85,104 +85,143 @@ class WebRTCHandler {
     // Create or retrieve a peer connection with the specified user
     async createPeerConnection(userName, didIOffer) {
         if (this.peerConnections[userName]) {
-            console.log(`PeerConnection with ${userName} already exists.`);
+            // console.log(`PeerConnection with ${userName} already exists.`);
             return this.peerConnections[userName];
         }
 
-        try {
-            console.log(`Creating PeerConnection with ${userName}`);
-            const pc = new RTCPeerConnection(iceServers);
-            this.peerConnections[userName] = pc;    
+        // try {
+        // console.log(`Creating PeerConnection with ${userName}`);
+        const pc = new RTCPeerConnection(iceServers);
+        this.peerConnections[userName] = pc;    
+    
+        // console.log("Connection established with", userName);
+        // console.log("Generating ICE candidates for", userName);
         
-            console.log("Connection established with", userName);
-            console.log("Generating ICE candidates for", userName);
-            
-            // add data channel to peer connection
-            const dataChannel = pc.createDataChannel("testChannel");
+        // add data channel to peer connection
+        const dataChannel = pc.createDataChannel("testChannel");
 
-            // adding event listener to data channel
-            console.log("Data channel created");
+        // adding event listener to data channel
+        // console.log("Data channel created");
 
-            // Add local stream tracks to the peer connection
-            console.log("Local stream tracks:", this.localStream.getTracks());
-            this.localStream.getTracks().forEach(track => pc.addTrack(track, this.localStream));
+        // Add local stream tracks to the peer connection
+        // console.log("Local stream tracks:", this.localStream.getTracks());
+        this.localStream.getTracks().forEach(track => {
+            track.enabled = true;
+            pc.addTrack(track, this.localStream);
+        });
 
 
-            console.log("Local stream added to peer connection");
+        // console.log("Local stream added to peer connection");
             // print something which confirms local stream is added to peer connection
 
             // Handle receiving remote stream
-            pc.ontrack = (event) => {
-                console.log(`Receiving remote stream from ${userName}`);
-                const [stream] = event.streams; // assuming streams[0] is the main stream
-                console.log('Received Stream:', stream);
+            // pc.ontrack = (event) => {
+            //     // console.log(`Receiving remote stream from ${userName}`);
+            //     const [stream] = event.streams; // assuming streams[0] is the main stream
+            //     // console.log('Received Stream:', stream);
 
-                // Check if the stream contains video tracks
-                const videoTracks = stream.getVideoTracks();
-                const audioTracks = stream.getAudioTracks();
+            //     // Check if the stream contains video tracks
+            //     const videoTracks = stream.getVideoTracks();
+            //     const audioTracks = stream.getAudioTracks();
 
-                if (videoTracks.length === 0) {
-                    console.error(`No video track available for ${userName}`);
-                    return;
-                }
+            //     if (videoTracks.length === 0) {
+            //         console.error(`No video track available for ${userName}`);
+            //         return;
+            //     }
 
-                if (audioTracks.length === 0) {
-                    console.warn(`No audio track available for ${userName}`);
-                }
+            //     if (audioTracks.length === 0) {
+            //         console.warn(`No audio track available for ${userName}`);
+            //     }
 
-                console.log('Video Tracks:', videoTracks);
-                console.log('Audio Tracks:', audioTracks);
+            //     // console.log('Video Tracks:', videoTracks);
+            //     // console.log('Audio Tracks:', audioTracks);
 
-                // Dynamically create the video element or assign the stream to an existing one
-                const remoteVideoElement_pro = document.getElementById(`remoteVideo_${userName}`);
+            //     // Dynamically create the video element or assign the stream to an existing one
+            //     const remoteVideoElement_pro = document.getElementById(`remoteVideo_${userName}`);
 
-                if (!remoteVideoElement_pro) {
-                    const remoteVideoElement = document.createElement('video');
-                    remoteVideoElement.muted = true;  // Mute initially to avoid autoplay blocking
-                    remoteVideoElement.id = `remoteVideo_${userName}`;
-                    remoteVideoElement.autoplay = true;
-                    remoteVideoElement.playsInline = true;
-                    remoteVideoElement.style.width = '300px';
-                    remoteVideoElement.style.height = '300px';
+            //     if (!remoteVideoElement_pro) {
+            //         const remoteVideoElement = document.createElement('video');
+            //         remoteVideoElement.id = `remoteVideo_${userName}`;
+            //         remoteVideoElement.autoplay = true;
+            //         remoteVideoElement.playsInline = true;
+            //         remoteVideoElement.style.width = '300px';
+            //         remoteVideoElement.style.height = '300px';
+            //         remoteVideoElement.muted = true;  // Mute initially to avoid autoplay blocking
+            //         remoteVideoElement.style.backgroundColor = 'black';
+            //         remoteVideoElement.style.margin = '10px';
 
-                    // Set the stream object
-                    remoteVideoElement.srcObject = stream;
+            //         // Set the stream object
+            //         remoteVideoElement.srcObject = stream[0];
+            //         remoteVideoElement.srcObject = null;
                     
-                    // Append the video element to the container
-                    const container = document.getElementById('remoteVideoContainer');
-                    if (container) {
-                        console.log('Appending video element to the container');
-                        container.appendChild(remoteVideoElement);
-                    } else {
-                        console.error('Remote video container not found in the DOM');
-                    }
-                } else {
-                    // If the video element already exists, update its srcObject
-                    console.log('Updating srcObject for an existing video element');
-                    remoteVideoElement_pro.srcObject = stream;
-                }
-            };
+            //         // Append the video element to the container
+            //         const container = document.getElementById('remoteVideoContainer');
+            //         if (container) {
+            //             // console.log('Appending video element to the container');
+            //             container.appendChild(remoteVideoElement);
+            //         } else {
+            //             console.error('Remote video container not found in the DOM');
+            //         }
+            //     } else {
+            //         // If the video element already exists, update its srcObject
+            //         // console.log('Updating srcObject for an existing video element');
+            //         remoteVideoElement_pro.srcObject = stream;
+            //     }
+            // };
 
 
-            // ICE Candidate search
-            pc.onicecandidate = (event) => {
-                console.log(`ICE candidate generated for ${userName}`);
+            // pc.ontrack = (event) => {
+            //     const [remoteStream] = event.streams; // Get the remote stream
+            //     const videoElement = document.getElementById('peer-video');
+            //     videoElement.srcObject = remoteStream;
+            // };
 
-                if (event.candidate) {
-                    console.log(`Sending ICE candidate to ${userName}`);
+        let remoteStream = new MediaStream()
 
-                    this.socket.emit('sendIceCandidateToSignalingServer', {
-                        iceCandidate: event.candidate,
-                        targetUserName: userName,
-                        meetingCode: this.meetID
-                    });
-                }
-            };
+        const remoteVideoelem = document.getElementById('peer-video')
+        remoteVideoelem.srcObject = remoteStream
 
-            return pc;
-        } catch (error) {
-            console.error("Error creating PeerConnection:", error);
+        pc.ontrack = async (event) => {
+            // console.log("Remote stream added to peer connection")
+            // console.log("Remote stream tracks:", event.streams[0].getTracks())
+            // event.streams[0].getTracks().forEach((track) => {
+            //     // console.log(`${track.kind} track added to remote stream, track state is ${track.readyState}`)
+            //     // remoteStream.addTrack(track)
+            //     remoteStream.addTrack(track)
+            // })
+            event.streams[0].getTracks().forEach(track => {
+                // console.log(`${track.kind} track added to remote stream, track state is ${track.readyState}`)
+                track.enabled = true;
+                remoteStream.addTrack(track)
+                console.log("Remote track", track)
+            })
+            this.localStream.getTracks().forEach(track => {
+                // console.log(`${track.kind} track added to remote stream, track state is ${track.readyState}`)
+                // remoteStream.addTrack(track)
+                console.log("Local track", track)
+            })
         }
+
+
+        // ICE Candidate search
+        pc.onicecandidate = (event) => {
+            // console.log(`ICE candidate generated for ${userName}`);
+
+            if (event.candidate) {
+                // console.log(`Sending ICE candidate to ${userName}`);
+
+                this.socket.emit('sendIceCandidateToSignalingServer', {
+                    iceCandidate: event.candidate,
+                    targetUserName: userName,
+                    meetingCode: this.meetID
+                });
+            }
+        };
+
+        return pc;
+        // } catch (error) {
+        //     console.error("Error creating PeerConnection:", error);
+        // }
     }
 
     // Send an offer to the server for the specified peer
@@ -195,7 +234,7 @@ class WebRTCHandler {
 
         const offer = await pc.createOffer();
         if (pc.signalingState === 'have-local-offer') {
-            console.log('Local offer already created and set, skipping.');
+            // console.log('Local offer already created and set, skipping.');
             return;  // Prevent sending multiple offers
         }
 
@@ -214,7 +253,7 @@ class WebRTCHandler {
             targetUserName: peerUserName
         });
 
-        console.log('Offer emitted for user:', peerUserName);
+        // console.log('Offer emitted for user:', peerUserName);
     }
 
     // Handle receiving an offer and respond with an answer
@@ -238,7 +277,7 @@ class WebRTCHandler {
             offererUserName: offererUserName
         });
 
-        console.log('Answer emitted for user:', offererUserName);
+        // console.log('Answer emitted for user:', offererUserName);
     }
 
     // Handle a new client joining the meeting
@@ -253,19 +292,19 @@ class WebRTCHandler {
     setupSocketListeners() {
         // Handle when a new client joins the meeting
         this.socket.on('newClientJoined', ({ userName }) => {
-            console.log(`${userName} joined the meeting.`);
+            // console.log(`${userName} joined the meeting.`);
             this.handleNewClientJoined(userName);
         });
 
         // Handle receiving an offer from another client
         this.socket.on('receiveOffer', async ({ offer, offererUserName }) => {
-            console.log(`Received offer from ${offererUserName} at ${new Date().toISOString()}`);
+            // console.log(`Received offer from ${offererUserName} at ${new Date().toISOString()}`);
             this.handleOffer(offer, offererUserName);
         });
 
         // Handle receiving an answer from another client
         this.socket.on('answerResponse', async ({ answer, answererUserName }) => {
-            console.log('Received answer from:', answererUserName);
+            // console.log('Received answer from:', answererUserName);
 
             const pc = this.peerConnections[answererUserName];
             if (pc) {
@@ -278,7 +317,7 @@ class WebRTCHandler {
         this.socket.on('receiveIceCandidate', (iceCandidate, userName) => {
             const pc = this.peerConnections[userName];
             if (pc) {
-                console.log(`Received ICE candidate from ${userName}`);
+                // console.log(`Received ICE candidate from ${userName}`);
                 pc.addIceCandidate(new RTCIceCandidate(iceCandidate));
             }
         });
