@@ -272,7 +272,7 @@ const styles = {
     },
     audioLevelBar: {
         width: '100%',
-        transition: 'height 0.08s ease-in-out',
+        transition: 'height 0.05s ease-in-out',
         position: 'absolute',
         bottom: 0,
     },

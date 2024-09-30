@@ -5,12 +5,14 @@ const iceServers = [
     { urls: "stun.l.google.com:19302" },
 ];
 
+// read config.json
+const config = require('./config.json');
+// Set the base URL for the API
+const baseURL = config.baseURL;
 
 class WebRTCHandler {
     constructor(meetID, userName) {
-        // this.socket = io.connect('http://172.31.12.101:8181');  // Adjust server URL as necessary
-        // this.socket = io.connect('http://172.31.98.115:8181')
-        this.socket = io.connect('http://35.200.188.94:80')
+        this.socket = io.connect(baseURL)
 
         this.meetID = meetID;
         this.userName = userName;
