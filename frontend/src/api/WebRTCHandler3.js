@@ -3,15 +3,6 @@ import io from 'socket.io-client';
 
 const iceServers = [
     { urls: "stun.l.google.com:19302" },
-    { urls: "stun:stun.l.google.com:5349" },
-    { urls: "stun:stun1.l.google.com:3478" },
-    { urls: "stun:stun1.l.google.com:5349" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:5349" },
-    { urls: "stun:stun3.l.google.com:3478" },
-    { urls: "stun:stun3.l.google.com:5349" },
-    { urls: "stun:stun4.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:5349" }
 ];
 
 
@@ -27,6 +18,8 @@ class WebRTCHandler {
         this.peerConnections = {};
         this.localStream = null;
 
+        // adding for UI selective participants 
+        this.participantUpdateCallback = null;
         // Audio/Video status flags
         this.audioEnabled = true;
         this.videoEnabled = true;
@@ -36,6 +29,9 @@ class WebRTCHandler {
 
         console.log('WebRTCHandler initialized');
     }
+
+
+
 
     // Initialize media streams (video & audio)
     async initializeMedia() {
@@ -105,7 +101,12 @@ class WebRTCHandler {
 
             // Add local stream tracks to the peer connection
             console.log("Local stream tracks:", this.localStream.getTracks());
-            this.localStream.getTracks().forEach(track => pc.addTrack(track, this.localStream));
+            this.localStream.getTracks().forEach(track => {
+                track.enabled = true;
+                pc.addTrack(track, this.localStream)
+                console.log(`${track.kind} track added to peer connection. State: ${track.readyState}`);
+            });
+            
 
 
             console.log("Local stream added to peer connection");
@@ -241,13 +242,53 @@ class WebRTCHandler {
         console.log('Answer emitted for user:', offererUserName);
     }
 
+    updateParticipantList() {
+        if (this.participantUpdateCallback) {
+            this.participantUpdateCallback(this.clients);
+        }
+    }
+
+    // Set a callback to notify UI of participant changes
+    setParticipantUpdateCallback(callback) {
+        this.participantUpdateCallback = callback;
+    }
+
     // Handle a new client joining the meeting
     async handleNewClientJoined(userName) {
         if (!this.clients.includes(userName)) {
             this.clients.push(userName);
             this.createPeerConnection(userName, false);
+            this.updateParticipantList();
         }
     }
+// To access the selected participants, call this function 
+    // const getSelectedParticipants = () => {
+    //     return Object.keys(selectedParticipants).filter(participant => selectedParticipants[participant]);
+    // };
+
+    // updateSelectedStreams(selectedParticipants) {
+    //     // Get the selected participants
+    //     const selectedParticipantList = Object.keys(selectedParticipants).filter(participant => selectedParticipants[participant]);
+    //     console.log('Selected Participants:', selectedParticipantList);
+
+    //     // Get the participants that are not selected
+    //     const unselectedParticipants = this.clients.filter(client => !selectedParticipantList.includes(client));
+    //     console.log('Unselected Participants:', unselectedParticipants);
+
+    //     // Close the streaming for unselected participants
+    //     unselectedParticipants.forEach(participant => {
+    //         const pc = this.peerConnections[participant];
+    //         if (pc) {
+    //             console.log(`${pc.getSenders()}`)
+    //             pc.getSenders().forEach(sender => {
+    //                 if (sender.track) {
+    //                     sender.track.enabled = false;
+    //                     console.log(`Removing track for ${participant}`);
+    //                 }
+    //             });
+    //         }
+    //     });
+    // };
 
     // Set up socket listeners for events (new clients, offers, answers)
     setupSocketListeners() {
@@ -282,6 +323,32 @@ class WebRTCHandler {
                 pc.addIceCandidate(new RTCIceCandidate(iceCandidate));
             }
         });
+
+        this.socket.on('clientLeft', ({userName}) => {
+            console.log(`Client ${userName} left the meeting.`);
+            if (this.clients.includes(userName)) {
+                this.clients = this.clients.filter(client => client !== userName);
+                this.updateParticipantList();
+            }
+
+            // Close the peer connection
+            if (this.peerConnections[userName]) {
+                this.peerConnections[userName].close();
+                delete this.peerConnections[userName];
+            }
+
+            // Remove the video element
+            const remoteVideoElement = document.getElementById(`remoteVideo_${userName}`);
+            if (remoteVideoElement) {
+                remoteVideoElement.remove();
+            }
+        });
+    }
+
+    // handle leave meeting
+    handleLeaveMeeting() {
+        this.socket.emit('leaveMeet', {});
+        this.cleanup();
     }
 
     cleanup() {
@@ -300,6 +367,10 @@ class WebRTCHandler {
         if (this.socket) {
             this.socket.disconnect();
         }
+
+        this.clients = [];
+        this.updateParticipantList();  
+        
     }
     
 }
