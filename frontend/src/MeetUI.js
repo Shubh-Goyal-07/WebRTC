@@ -115,7 +115,7 @@ const MeetUI = () => {
 
     const handleLeaveMeeting = () => {
         if (webrtcHandler) {
-            webrtcHandler.cleanup();
+            webrtcHandler.handleLeaveMeeting();
         }
         navigate('/');
     };
@@ -125,6 +125,8 @@ const MeetUI = () => {
             ...prevSelected,
             [participant]: !prevSelected[participant],
         }));
+
+        webrtcHandler.updateSelectedStreams(selectedParticipants)
     };
 
     const updateVideoStatus = (participantName, isVideoOn) => {

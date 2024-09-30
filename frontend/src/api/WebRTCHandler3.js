@@ -3,15 +3,6 @@ import io from 'socket.io-client';
 
 const iceServers = [
     { urls: "stun.l.google.com:19302" },
-    { urls: "stun:stun.l.google.com:5349" },
-    { urls: "stun:stun1.l.google.com:3478" },
-    { urls: "stun:stun1.l.google.com:5349" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:5349" },
-    { urls: "stun:stun3.l.google.com:3478" },
-    { urls: "stun:stun3.l.google.com:5349" },
-    { urls: "stun:stun4.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:5349" }
 ];
 
 
@@ -275,6 +266,30 @@ class WebRTCHandler {
     //     return Object.keys(selectedParticipants).filter(participant => selectedParticipants[participant]);
     // };
 
+    // updateSelectedStreams(selectedParticipants) {
+    //     // Get the selected participants
+    //     const selectedParticipantList = Object.keys(selectedParticipants).filter(participant => selectedParticipants[participant]);
+    //     console.log('Selected Participants:', selectedParticipantList);
+
+    //     // Get the participants that are not selected
+    //     const unselectedParticipants = this.clients.filter(client => !selectedParticipantList.includes(client));
+    //     console.log('Unselected Participants:', unselectedParticipants);
+
+    //     // Close the streaming for unselected participants
+    //     unselectedParticipants.forEach(participant => {
+    //         const pc = this.peerConnections[participant];
+    //         if (pc) {
+    //             console.log(`${pc.getSenders()}`)
+    //             pc.getSenders().forEach(sender => {
+    //                 if (sender.track) {
+    //                     sender.track.enabled = false;
+    //                     console.log(`Removing track for ${participant}`);
+    //                 }
+    //             });
+    //         }
+    //     });
+    // };
+
     // Set up socket listeners for events (new clients, offers, answers)
     setupSocketListeners() {
         // Handle when a new client joins the meeting
@@ -308,6 +323,32 @@ class WebRTCHandler {
                 pc.addIceCandidate(new RTCIceCandidate(iceCandidate));
             }
         });
+
+        this.socket.on('clientLeft', (userName) => {
+            console.log(`Client ${userName} left the meeting.`);
+            if (this.clients.includes(userName)) {
+                this.clients = this.clients.filter(client => client !== userName);
+                this.updateParticipantList();
+            }
+
+            // Close the peer connection
+            if (this.peerConnections[userName]) {
+                this.peerConnections[userName].close();
+                delete this.peerConnections[userName];
+            }
+
+            // Remove the video element
+            const remoteVideoElement = document.getElementById(`remoteVideo_${userName}`);
+            if (remoteVideoElement) {
+                remoteVideoElement.remove();
+            }
+        });
+    }
+
+    // handle leave meeting
+    handleLeaveMeeting() {
+        this.socket.emit('disconnect', { meetingCode: this.meetID, userName: this.userName });
+        this.cleanup();
     }
 
     cleanup() {
