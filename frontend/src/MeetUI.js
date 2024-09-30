@@ -25,10 +25,10 @@ const MeetUI = () => {
     }, []); // Run effect when meetId or userName changes
 
     return (
-        <div>
+        <div id="remoteVideoContainer">
             <p>Meeting Code: {meetId}</p>
             <video id="localVideo" autoPlay muted></video>
-            <video id="remoteVideo" autoPlay></video>
+            {/* <video id="remoteVideo" autoPlay></video> */}
         </div>
     );
 };

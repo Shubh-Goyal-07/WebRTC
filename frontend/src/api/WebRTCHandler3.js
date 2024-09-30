@@ -25,6 +25,10 @@ class WebRTCHandler {
         this.peerConnections = {};
         this.localStream = null;
 
+        // Audio/Video status flags
+        this.audioEnabled = true;
+        this.videoEnabled = true;
+
         // Set up socket listeners (only once)
         this.setupSocketListeners();
 
@@ -36,6 +40,20 @@ class WebRTCHandler {
         this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = this.localStream;
         console.log('Media initialized');
+    }
+
+    // Toggle audio (mute/unmute)
+    toggleAudio() {
+        this.audioEnabled = !this.audioEnabled;
+        this.localStream.getAudioTracks().forEach(track => track.enabled = this.audioEnabled);
+        console.log(`Audio ${this.audioEnabled ? 'enabled' : 'disabled'}`);
+    }
+
+    // Toggle video (on/off)
+    toggleVideo() {
+        this.videoEnabled = !this.videoEnabled;
+        this.localStream.getVideoTracks().forEach(track => track.enabled = this.videoEnabled);
+        console.log(`Video ${this.videoEnabled ? 'enabled' : 'disabled'}`);
     }
 
     // Join a meeting by emitting an event to the server
@@ -78,6 +96,33 @@ class WebRTCHandler {
             
             // add data channel to peer connection
             const dataChannel = pc.createDataChannel("testChannel");
+
+            // Add local stream tracks to the peer connection
+            this.localStream.getTracks().forEach(track => pc.addTrack(track, this.localStream));
+
+            // Handle receiving remote stream
+            pc.ontrack = (event) => {
+                console.log(`Receiving remote stream from ${userName}`);
+
+                const remoteVideoElement = document.getElementById(`remoteVideo_${userName}`);
+                
+                // If not, create a new video element dynamically
+                if (!remoteVideoElement) {
+                    remoteVideoElement = document.createElement('video');
+                    remoteVideoElement.id = `remoteVideo_${userName}`;
+                    remoteVideoElement.autoplay = true;
+                    remoteVideoElement.playsInline = true;
+                    remoteVideoElement.style.width = '300px';  // Set size/style as needed
+
+                    // Append the video element to the DOM (e.g., to a container)
+                    document.getElementById('remoteVideoContainer').appendChild(remoteVideoElement);
+                }
+
+
+                if (remoteVideoElement) {
+                    remoteVideoElement.srcObject = event.streams[0];
+                }
+            };
 
             // ICE Candidate search
             pc.onicecandidate = (event) => {
