@@ -42,6 +42,7 @@ class WebRTCHandler {
         this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = this.localStream;
         console.log('Media initialized');
+        console.log('Local Stream:', this.localStream);
     }
 
     // Toggle audio (mute/unmute)
@@ -99,32 +100,69 @@ class WebRTCHandler {
             // add data channel to peer connection
             const dataChannel = pc.createDataChannel("testChannel");
 
+            // adding event listener to data channel
+            console.log("Data channel created");
+
             // Add local stream tracks to the peer connection
+            console.log("Local stream tracks:", this.localStream.getTracks());
             this.localStream.getTracks().forEach(track => pc.addTrack(track, this.localStream));
+
+
+            console.log("Local stream added to peer connection");
+            // print something which confirms local stream is added to peer connection
 
             // Handle receiving remote stream
             pc.ontrack = (event) => {
                 console.log(`Receiving remote stream from ${userName}`);
+                const [stream] = event.streams; // assuming streams[0] is the main stream
+                console.log('Received Stream:', stream);
 
+                // Check if the stream contains video tracks
+                const videoTracks = stream.getVideoTracks();
+                const audioTracks = stream.getAudioTracks();
+
+                if (videoTracks.length === 0) {
+                    console.error(`No video track available for ${userName}`);
+                    return;
+                }
+
+                if (audioTracks.length === 0) {
+                    console.warn(`No audio track available for ${userName}`);
+                }
+
+                console.log('Video Tracks:', videoTracks);
+                console.log('Audio Tracks:', audioTracks);
+
+                // Dynamically create the video element or assign the stream to an existing one
                 const remoteVideoElement_pro = document.getElementById(`remoteVideo_${userName}`);
-                
-                // If not, create a new video element dynamically
+
                 if (!remoteVideoElement_pro) {
                     const remoteVideoElement = document.createElement('video');
+                    remoteVideoElement.muted = true;  // Mute initially to avoid autoplay blocking
                     remoteVideoElement.id = `remoteVideo_${userName}`;
                     remoteVideoElement.autoplay = true;
                     remoteVideoElement.playsInline = true;
-                    remoteVideoElement.style.width = '300px';  // Set size/style as needed
+                    remoteVideoElement.style.width = '300px';
+                    remoteVideoElement.style.height = '300px';
 
-                    // Append the video element to the DOM (e.g., to a container)
-                    document.getElementById('remoteVideoContainer').appendChild(remoteVideoElement);
-                }
-
-
-                if (remoteVideoElement_pro) {
-                    remoteVideoElement_pro.srcObject = event.streams[0];
+                    // Set the stream object
+                    remoteVideoElement.srcObject = stream;
+                    
+                    // Append the video element to the container
+                    const container = document.getElementById('remoteVideoContainer');
+                    if (container) {
+                        console.log('Appending video element to the container');
+                        container.appendChild(remoteVideoElement);
+                    } else {
+                        console.error('Remote video container not found in the DOM');
+                    }
+                } else {
+                    // If the video element already exists, update its srcObject
+                    console.log('Updating srcObject for an existing video element');
+                    remoteVideoElement_pro.srcObject = stream;
                 }
             };
+
 
             // ICE Candidate search
             pc.onicecandidate = (event) => {
@@ -245,6 +283,25 @@ class WebRTCHandler {
             }
         });
     }
+
+    cleanup() {
+        // Close all peer connections
+        Object.keys(this.peerConnections).forEach(userName => {
+            this.peerConnections[userName].close();
+            delete this.peerConnections[userName];
+        });
+        
+        // Stop local media stream
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
+        }
+    
+        // Disconnect socket
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+    }
+    
 }
 
 export default WebRTCHandler;

@@ -16,13 +16,15 @@ const MeetUI = () => {
             console.log('Media initialized');
             webrtcHandler.joinMeeting();
         };
-
+    
         initialize();
-
+    
         return () => {
-            // Optionally handle cleanup here (e.g., disconnect socket or cleanup resources)
+            // Cleanup WebRTC connections and socket listeners here
+            webrtcHandler.cleanup();
         };
-    }, []); // Run effect when meetId or userName changes
+    }, [meetId, userName]);
+    
 
     return (
         <div id="remoteVideoContainer">
