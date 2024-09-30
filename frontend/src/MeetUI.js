@@ -1,29 +1,36 @@
+// src/MeetUI.js
 import React, { useEffect, useRef } from 'react';
-import WebRTCHandler from './api/WebRTCHandler';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
+import WebRTCHandler from './api/WebRTCHandler3';
+import { useParams } from 'react-router-dom';
 
 const MeetUI = () => {
-    const socketRef = useRef(null);
-    const meetingCode = "your-meeting-code"; // Replace with actual meeting code
-    const userName = "your-username"; // Replace with actual username
-
+    // const socketRef = useRef(null);
+    const { meetId, userName } = useParams();
+    
     useEffect(() => {
-        // Initialize the socket connection here
-        socketRef.current = io.connect('http://172.31.12.101:8181'); // Replace with your actual socket server URL
-
-        const webrtcHandler = new WebRTCHandler(socketRef.current, meetingCode, userName);
-        webrtcHandler.initializeMedia();
-
-        // Cleanup function to disconnect the socket when the component unmounts
-        return () => {
-            socketRef.current.disconnect();
+        const webrtcHandler = new WebRTCHandler(meetId, userName);
+        
+        const initialize = async () => {
+            await webrtcHandler.initializeMedia();
+            console.log('Media initialized');
+            webrtcHandler.joinMeeting();
         };
-    }, [meetingCode, userName]); // Include dependencies as needed
+    
+        initialize();
+    
+        return () => {
+            // Cleanup WebRTC connections and socket listeners here
+            webrtcHandler.cleanup();
+        };
+    }, [meetId, userName]);
+    
 
     return (
-        <div>
+        <div id="remoteVideoContainer">
+            <p>Meeting Code: {meetId}</p>
             <video id="localVideo" autoPlay muted></video>
-            <video id="remoteVideo" autoPlay></video>
+            {/* <video id="remoteVideo" autoPlay></video> */}
         </div>
     );
 };
