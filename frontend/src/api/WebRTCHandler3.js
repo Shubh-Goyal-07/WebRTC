@@ -98,27 +98,6 @@ class WebRTCHandler {
         } catch (error) {
             console.error("Error creating PeerConnection:", error);
         }
-        // this.peerConnections[userName] = pc;    
-
-        // console.log("Connection established with", userName);
-
-        // Handle ICE candidate generation and send them to the signaling server
-        // console.log(`Creating PeerConnection with ${userName}`);
-        // pc.onicecandidate = (event) => {
-        //     console.log(`ICE candidate generated for ${userName}`);
-
-        //     if (event.candidate) {
-        //         console.log(`Sending ICE candidate to ${userName}`);
-
-        //         this.socket.emit('sendIceCandidateToSignalingServer', {
-        //             iceCandidate: event.candidate,
-        //             userName,
-        //             meetingCode: this.meetID
-        //         });
-        //     }
-        // };
-
-        // return pc;
     }
 
     // Send an offer to the server for the specified peer
