@@ -27,6 +27,8 @@ class WebRTCHandler {
         this.peerConnections = {};
         this.localStream = null;
 
+        // adding for UI selective participants 
+        this.participantUpdateCallback = null;
         // Audio/Video status flags
         this.audioEnabled = true;
         this.videoEnabled = true;
@@ -36,6 +38,9 @@ class WebRTCHandler {
 
         console.log('WebRTCHandler initialized');
     }
+
+
+
 
     // Initialize media streams (video & audio)
     async initializeMedia() {
@@ -105,7 +110,12 @@ class WebRTCHandler {
 
             // Add local stream tracks to the peer connection
             console.log("Local stream tracks:", this.localStream.getTracks());
-            this.localStream.getTracks().forEach(track => pc.addTrack(track, this.localStream));
+            this.localStream.getTracks().forEach(track => {
+                track.enabled = true;
+                pc.addTrack(track, this.localStream)
+                console.log(`${track.kind} track added to peer connection. State: ${track.readyState}`);
+            });
+            
 
 
             console.log("Local stream added to peer connection");
@@ -241,13 +251,29 @@ class WebRTCHandler {
         console.log('Answer emitted for user:', offererUserName);
     }
 
+    updateParticipantList() {
+        if (this.participantUpdateCallback) {
+            this.participantUpdateCallback(this.clients);
+        }
+    }
+
+    // Set a callback to notify UI of participant changes
+    setParticipantUpdateCallback(callback) {
+        this.participantUpdateCallback = callback;
+    }
+
     // Handle a new client joining the meeting
     async handleNewClientJoined(userName) {
         if (!this.clients.includes(userName)) {
             this.clients.push(userName);
             this.createPeerConnection(userName, false);
+            this.updateParticipantList();
         }
     }
+// To access the selected participants, call this function 
+    // const getSelectedParticipants = () => {
+    //     return Object.keys(selectedParticipants).filter(participant => selectedParticipants[participant]);
+    // };
 
     // Set up socket listeners for events (new clients, offers, answers)
     setupSocketListeners() {
@@ -300,6 +326,10 @@ class WebRTCHandler {
         if (this.socket) {
             this.socket.disconnect();
         }
+
+        this.clients = [];
+        this.updateParticipantList();  
+        
     }
     
 }
