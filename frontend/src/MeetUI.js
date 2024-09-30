@@ -11,6 +11,7 @@ const MeetUI = () => {
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [audioLevel, setAudioLevel] = useState(0);
+    const [videoStatuses, setVideoStatuses] = useState({});
 
     const audioContextRef = useRef(null);
     const analyserRef = useRef(null);
@@ -27,7 +28,6 @@ const MeetUI = () => {
         handler.setParticipantUpdateCallback((clients) => {
             console.log("Updated clients:", clients);
             setParticipants(clients);
-            // Initialize selectedParticipants with all participants unchecked
             setSelectedParticipants(prevSelected => {
                 const newSelected = {...prevSelected};
                 clients.forEach(client => {
@@ -36,6 +36,16 @@ const MeetUI = () => {
                     }
                 });
                 return newSelected;
+            });
+            // Initialize video statuses
+            setVideoStatuses(prevStatuses => {
+                const newStatuses = {...prevStatuses};
+                clients.forEach(client => {
+                    if (!(client in newStatuses)) {
+                        newStatuses[client] = true; // Assume video is on by default
+                    }
+                });
+                return newStatuses;
             });
         });
 
@@ -117,19 +127,48 @@ const MeetUI = () => {
         }));
     };
 
+    const updateVideoStatus = (participantName, isVideoOn) => {
+        setVideoStatuses(prevStatuses => ({
+            ...prevStatuses,
+            [participantName]: isVideoOn
+        }));
+    };
+
     return (
         <div style={styles.container}>
-            <div id="remoteVideoContainer" style={styles.meetContent}>
-                <video id="localVideo" autoPlay muted style={styles.video}></video>
-                <div style={styles.audioMeter}>
-                    <div
-                        style={{
-                            ...styles.audioLevelBar,
-                            height: `${Math.min(audioLevel, 100)}%`,
-                            backgroundColor: audioLevel < 30 ? 'green' : 'red',
-                        }}
-                    />
+            <div style={styles.videoGrid}>
+                <div style={styles.videoWrapper}>
+                    <video id="localVideo" autoPlay muted style={styles.video}></video>
+                    <div style={styles.audioMeter}>
+                        <div
+                            style={{
+                                ...styles.audioLevelBar,
+                                height: `${Math.min(audioLevel, 100)}%`,
+                                backgroundColor: audioLevel < 60 ? 'green' : 'red',
+                            }}
+                        />
+                    </div>
+                    <div style={{...styles.nameTag, backgroundColor: isVideoOff ? 'red' : 'green'}}>
+                        {userName} (You)
+                    </div>
                 </div>
+                {participants.filter(p => p !== userName).map((participant) => (
+                    <div key={participant} style={{
+                        ...styles.videoWrapper,
+                        borderColor: videoStatuses[participant] ? 'green' : 'red'
+                    }}>
+                        <video
+                            id={`remoteVideo_${participant}`}
+                            autoPlay
+                            playsInline
+                            style={styles.video}
+                            onLoadedMetadata={() => updateVideoStatus(participant, true)}
+                        ></video>
+                        <div style={{...styles.nameTag, backgroundColor: videoStatuses[participant] ? 'green' : 'red'}}>
+                            {participant}
+                        </div>
+                    </div>
+                ))}
             </div>
 
             <div style={styles.participantsContainer}>
@@ -187,7 +226,6 @@ const MeetUI = () => {
     );
 };
 
-// Styles
 const styles = {
     container: {
         position: 'relative',
@@ -195,22 +233,28 @@ const styles = {
         height: '100vh',
         backgroundColor: '#f3f4f6',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
     },
-    meetContent: {
+    videoGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '10px',
+        padding: '10px',
+        height: 'calc(100% - 150px)', // Adjust based on your controlBar height
+        overflow: 'auto',
+    },
+    videoWrapper: {
         position: 'relative',
-        width: '60%',
-        height: '70%',
-        backgroundColor: '#000',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        aspectRatio: '16 / 9',
+        border: '3px solid',
+        borderRadius: '8px',
+        overflow: 'hidden',
     },
     video: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#222',
+        objectFit: 'cover',
     },
     audioMeter: {
         position: 'absolute',
@@ -224,7 +268,18 @@ const styles = {
     },
     audioLevelBar: {
         width: '100%',
-        transition: 'height 0.1s ease-in-out',
+        transition: 'height 0.08s ease-in-out',
+        position: 'absolute',
+        bottom: 0,
+    },
+    nameTag: {
+        position: 'absolute',
+        bottom: '8px',
+        left: '8px',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        color: 'white',
+        fontSize: '12px',
     },
     participantsContainer: {
         position: 'absolute',
@@ -244,9 +299,6 @@ const styles = {
         marginBottom: '10px',
     },
     controlBar: {
-        position: 'absolute',
-        bottom: '0',
-        width: '100%',
         padding: '1rem',
         backgroundColor: '#ffffff',
         borderTop: '1px solid #d1d5db',
@@ -259,7 +311,6 @@ const styles = {
     },
     primaryButton: {
         padding: '0.5rem 1rem',
-        backgroundColor: '#2563eb',
         color: '#ffffff',
         border: 'none',
         borderRadius: '4px',
