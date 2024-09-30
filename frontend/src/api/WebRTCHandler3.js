@@ -324,7 +324,7 @@ class WebRTCHandler {
             }
         });
 
-        this.socket.on('clientLeft', (userName) => {
+        this.socket.on('clientLeft', ({userName}) => {
             console.log(`Client ${userName} left the meeting.`);
             if (this.clients.includes(userName)) {
                 this.clients = this.clients.filter(client => client !== userName);
@@ -347,7 +347,7 @@ class WebRTCHandler {
 
     // handle leave meeting
     handleLeaveMeeting() {
-        this.socket.emit('disconnect', { meetingCode: this.meetID, userName: this.userName });
+        this.socket.emit('leaveMeet', {});
         this.cleanup();
     }
 
