@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import WebRTCHandler from './api/WebRTCHandler3';
+import WebRTCHandler from './api/WebRTCHandler';
 
 const MeetUI = () => {
     const { meetId, userName } = useParams();
