@@ -2,7 +2,7 @@ import io from 'socket.io-client';
 
 
 const iceServers = [
-    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun.l.google.com:19302" },
     { urls: "stun:stun.l.google.com:5349" },
     { urls: "stun:stun1.l.google.com:3478" },
     { urls: "stun:stun1.l.google.com:5349" },
@@ -17,7 +17,8 @@ const iceServers = [
 
 class WebRTCHandler {
     constructor(meetID, userName) {
-        this.socket = io.connect('http://172.31.12.101:8181');  // Adjust server URL as necessary
+        // this.socket = io.connect('http://172.31.12.101:8181');  // Adjust server URL as necessary
+        this.socket = io.connect('http://172.31.98.115:8181')
         this.meetID = meetID;
         this.userName = userName;
         this.clients = [];
@@ -67,26 +68,57 @@ class WebRTCHandler {
             return this.peerConnections[userName];
         }
 
-        const pc = new RTCPeerConnection({ iceServers });
-        this.peerConnections[userName] = pc;    
+        try {
+            console.log(`Creating PeerConnection with ${userName}`);
+            const pc = new RTCPeerConnection(iceServers);
+            this.peerConnections[userName] = pc;    
+        
+            console.log("Connection established with", userName);
+            console.log("Generating ICE candidates for", userName);
+            
+            // add data channel to peer connection
+            const dataChannel = pc.createDataChannel("testChannel");
+
+            // ICE Candidate search
+            pc.onicecandidate = (event) => {
+                console.log(`ICE candidate generated for ${userName}`);
+
+                if (event.candidate) {
+                    console.log(`Sending ICE candidate to ${userName}`);
+
+                    this.socket.emit('sendIceCandidateToSignalingServer', {
+                        iceCandidate: event.candidate,
+                        targetUserName: userName,
+                        meetingCode: this.meetID
+                    });
+                }
+            };
+
+            return pc;
+        } catch (error) {
+            console.error("Error creating PeerConnection:", error);
+        }
+        // this.peerConnections[userName] = pc;    
+
+        // console.log("Connection established with", userName);
 
         // Handle ICE candidate generation and send them to the signaling server
-        console.log(`Creating PeerConnection with ${userName}`);
-        pc.onicecandidate = (event) => {
-            console.log(`ICE candidate generated for ${userName}`);
+        // console.log(`Creating PeerConnection with ${userName}`);
+        // pc.onicecandidate = (event) => {
+        //     console.log(`ICE candidate generated for ${userName}`);
 
-            if (event.candidate) {
-                console.log(`Sending ICE candidate to ${userName}`);
+        //     if (event.candidate) {
+        //         console.log(`Sending ICE candidate to ${userName}`);
 
-                this.socket.emit('sendIceCandidateToSignalingServer', {
-                    iceCandidate: event.candidate,
-                    userName,
-                    meetingCode: this.meetID
-                });
-            }
-        };
+        //         this.socket.emit('sendIceCandidateToSignalingServer', {
+        //             iceCandidate: event.candidate,
+        //             userName,
+        //             meetingCode: this.meetID
+        //         });
+        //     }
+        // };
 
-        return pc;
+        // return pc;
     }
 
     // Send an offer to the server for the specified peer

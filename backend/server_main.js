@@ -92,9 +92,10 @@ const io = socketio(expressServer, {
     cors: {
         origin: [
             // "*"
-            // "http://localhost",
+            "http://localhost",
             'http://172.31.98.115',
-            'http://172.31.12.101' // if using a phone or another computer
+            'http://172.31.12.101', // if using a phone or another computer
+            'http://172.17.0.1'
         ],
         methods: ["GET", "POST"]
     }

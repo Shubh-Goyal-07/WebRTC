@@ -5,6 +5,7 @@ import Home from './Home'; // Import Home from a separate file
 // import WebSocketClient from './WebSocketClient';
 // import Meeting from './Meeting';
 import MeetUI from './MeetUI';
+import TestUI from './api/stuntest';
 
 const App = () => {
     return (
@@ -12,6 +13,7 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/meet/:meetId/:userName" element={<MeetUI />} />
+                <Route path="/meeting/" element={<TestUI />} />
                 {/* <Route path="/meet/:meetId" element={<Meet />} />   */}
                 {/* <Route path='/client' element={<WebSocketClient />} /> */}
                 {/* <Route path="/meeting/:meetingCode/:userName" element={<Meeting />} /> */}
