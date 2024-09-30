@@ -248,6 +248,8 @@ const styles = {
     },
     videoWrapper: {
         position: 'relative',
+        maxWidth: '350px',
+        maxHeight: '350px',
         aspectRatio: '16 / 9',
         border: '3px solid',
         borderRadius: '8px',
