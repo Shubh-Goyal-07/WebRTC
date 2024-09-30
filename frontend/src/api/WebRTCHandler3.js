@@ -18,7 +18,9 @@ const iceServers = [
 class WebRTCHandler {
     constructor(meetID, userName) {
         // this.socket = io.connect('http://172.31.12.101:8181');  // Adjust server URL as necessary
-        this.socket = io.connect('http://172.31.98.115:8181')
+        // this.socket = io.connect('http://172.31.98.115:8181')
+        this.socket = io.connect('http://35.200.188.94:80')
+
         this.meetID = meetID;
         this.userName = userName;
         this.clients = [];
@@ -104,11 +106,11 @@ class WebRTCHandler {
             pc.ontrack = (event) => {
                 console.log(`Receiving remote stream from ${userName}`);
 
-                const remoteVideoElement = document.getElementById(`remoteVideo_${userName}`);
+                const remoteVideoElement_pro = document.getElementById(`remoteVideo_${userName}`);
                 
                 // If not, create a new video element dynamically
-                if (!remoteVideoElement) {
-                    remoteVideoElement = document.createElement('video');
+                if (!remoteVideoElement_pro) {
+                    const remoteVideoElement = document.createElement('video');
                     remoteVideoElement.id = `remoteVideo_${userName}`;
                     remoteVideoElement.autoplay = true;
                     remoteVideoElement.playsInline = true;
@@ -119,8 +121,8 @@ class WebRTCHandler {
                 }
 
 
-                if (remoteVideoElement) {
-                    remoteVideoElement.srcObject = event.streams[0];
+                if (remoteVideoElement_pro) {
+                    remoteVideoElement_pro.srcObject = event.streams[0];
                 }
             };
 
